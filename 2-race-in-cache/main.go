@@ -8,10 +8,15 @@
 
 package main
 
-import "container/list"
+import (
+	"container/list"
+	"sync"
+)
 
 // CacheSize determines how big the cache can grow
 const CacheSize = 100
+
+var mutex = &sync.Mutex{}
 
 // KeyStoreCacheLoader is an interface for the KeyStoreCache
 type KeyStoreCacheLoader interface {
@@ -36,6 +41,7 @@ func New(load KeyStoreCacheLoader) *KeyStoreCache {
 
 // Get gets the key from cache, loads it from the source if needed
 func (k *KeyStoreCache) Get(key string) string {
+	mutex.Lock()
 	val, ok := k.cache[key]
 
 	// Miss - load from database and save it in cache
@@ -50,6 +56,7 @@ func (k *KeyStoreCache) Get(key string) string {
 			k.pages.Remove(k.pages.Back())
 		}
 	}
+	mutex.Unlock()
 
 	return val
 }
